@@ -75,3 +75,6 @@ Resources:
                   "ecr:UploadLayerPart"
                 ]
                 Resource: "*"
+Outputs:
+  CodebuildProjectName:
+    Value: !Ref DockerImageBuilder
