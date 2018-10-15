@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CodeBuild Docker Sample
+Parameters:
+  GitHubRepository:
+    Type: String
+    Default: https://github.com/{USERNAME}/{REPOSITORY_NAME}.git
+
+Conditions: {}
+Resources:
+  DockerContainerRepository:
+    Type: AWS::ECR::Repository
+
+  DockerImageBuilder:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Source:
+        Type: GITHUB
+        Location: !Ref GitHubRepository
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        Image: aws/codebuild/docker:17.09.0
+        ComputeType: BUILD_GENERAL1_LARGE
+        EnvironmentVariables:
+          - Name: IMAGE_REPO_NAME
+            Value: !Ref DockerContainerRepository
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWS::AccountId
+          - Name: IMAGE_TAG
+            Value: latest
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+      ServiceRole: !GetAtt
+        - CodeBuildRole
+        - Arn
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: policy-for-codebuild
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: [
+                  "logs:CreateLogGroup",
+                  "logs:CreateLogStream",
+                  "logs:PutLogEvents",
+                  "logs:DescribeLogStreams"
+                ]
+                Resource: "arn:aws:logs:*:*:*"
+              - Effect: Allow
+                Action: [
+                  "ecr:BatchCheckLayerAvailability",
+                  "ecr:GetDownloadUrlForLayer",
+                  "ecr:GetRepositoryPolicy",
+                  "ecr:DescribeRepositories",
+                  "ecr:ListImages",
+                  "ecr:DescribeImages",
+                  "ecr:BatchGetImage",
+                  "ecr:CompleteLayerUpload",
+                  "ecr:GetAuthorizationToken",
+                  "ecr:InitiateLayerUpload",
+                  "ecr:PutImage",
+                  "ecr:UploadLayerPart"
+                ]
+                Resource: "*"
